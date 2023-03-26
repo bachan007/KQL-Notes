@@ -1,0 +1,122 @@
+KQL --> Kusto Query Language
+A Kusto query is a read-only request to process data and return results.
+
+-----------------
+print "Hello World"
+print 10+5
+
+--------------------
+
+1. Gives number of records
+requests
+| where timestamp > ago(10d)
+| count 
+-----------------
+Difference between limit and take
+
+1. Gives 1st 10 records
+requests
+| where timestamp > ago(10d)
+| limit 10 
+
+2. Gives 10 random records
+requests
+| where timestamp > ago(10d)
+| take 10
+
+-------------------
+summarize -> needs aggregator and group by expression (throws error is not available)
+count is aggregator and resultcode is group by column
+requests
+| where timestamp > ago(10d)
+| summarize count() by resultCode
+
+will give count of values of resultCode column
+
+
+----------------------
+Project --> used to project only desired columns
+
+requests
+| project 
+    timestamp,
+    operation_Name,
+    success,
+    resultCode,
+    duration  
+| where timestamp > ago(30d)
+| order by timstamp desc
+
+
+-------------------------
+selecting the finctionapp and function name
+
+requests
+| project 
+    timestamp,
+    operation_Name,
+    success,
+    resultCode,
+    duration  
+| where timestamp > ago(30d)
+| where cloud_RoleName =~ "fn-app" and operation_Name =~ "function_name"
+
+
+-------------------------
+project-away --> removing a column
+requests
+| project-away resultCode
+| where timestamp > ago(30d)
+
+
+------------------------
+project-rename --> column rename 
+requests
+| project-rename result=resultCode
+| where timestamp > ago(30d)
+
+
+---------------------------
+max and arg_max
+df['column'].max() = max(column) in KQL
+df[df['column']==df['column'].max()] = arg_max(column,*)
+
+explanation ---
+max will return a particular maximum value from  a column, but arg_max(column,*) will return the whole record of the maximum value associated. Or we can specify the particular columns like in pandas.
+Eg :
+request
+| arg_max(columnA,*)
+
+or 
+request
+| arg_amx(columnA,column1,column2....)
+
+
+------------------------------- 
+render chart
+requests
+| where timestamp > ago(30d)
+| project success, resultCode
+| summarize count() by success
+| render piechart 
+
+
+------------------------------
+variable declaration
+
+let x = 200 ;
+let y = 'string' ;
+
+
+
+-----------------------------------
+Union 
+
+traces
+| union withsource='SourceTable' requests;
+
+
+--------------------------------
+merge or join
+requests
+| join kind=innerunique  (traces) on $left.operation_Name==$right.operation_Name 
